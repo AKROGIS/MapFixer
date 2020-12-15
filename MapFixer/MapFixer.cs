@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using ESRI.ArcGIS.Carto;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Catalog;
+using ESRI.ArcGIS.GISClient;
+using ESRI.ArcGIS.DataSourcesRaster;
 
 namespace MapFixer
 {
@@ -10,6 +12,7 @@ namespace MapFixer
     {
         public void FixMap(Moves moves)
         {
+            CheckLayers();
             var brokenDataSources = GetBrokenDataSources();
             // We do not need to do anything if there was nothing to fix
             if (brokenDataSources.Count == 0) {
@@ -190,7 +193,7 @@ namespace MapFixer
                         // Repairing the sub layers is insufficient.  The IMosaicLayer must be repaired (this will repair the sub layers as well)
                         // NOTE: It would be nice to remove the sub-layers (they will report invalid),
                         //       1) they do not need to be fixed if the parent layer is fixed (must do)
-                        //       2) they will report as unfixable after the parent layer is fixed because the new, correct path isn't in the moves db 
+                        //       2) they will report as un fixable after the parent layer is fixed because the new, correct path isn't in the moves db 
                         else if (layer is IMosaicLayer)
                         {
                             var groupLayer = layer as ICompositeLayer;
@@ -222,6 +225,96 @@ namespace MapFixer
                 }
             }
             return brokenDataSources;
+        }
+
+        private void CheckLayers()
+        {
+            //NOTE: MapServerLayer does not implement ILayer2 or IDataLayer2
+
+            var alert = new AlertForm();
+            IMaps maps = ArcMap.Document.Maps;
+            for (int i = 0; i < maps.Count; i++)
+            {
+                IMap map = maps.Item[i];
+                // ReSharper disable once RedundantArgumentDefaultValue
+                IEnumLayer layerEnumerator = map.Layers[null];
+                ILayer layer;
+                while ((layer = layerEnumerator.Next()) != null)
+                {
+                    // ReSharper disable once MergeCastWithTypeCheck
+                    if (layer is IMapServerLayer)
+                    {
+                        IAGSServerObjectName mapServer;
+                        string mapServiceLoc;
+                        string mapServiceName;
+                        ((IMapServerLayer)layer).GetConnectionInfo(out mapServer, out mapServiceLoc, out mapServiceName);
+                        alert.Text = "Found IMapServerLayer";
+                        alert.msgBox.Text = $"IMapServerLayer: {layer.Name}\n" +
+                                            $"Layer is valid: {layer.Valid}\n" +
+                                            $"IMapServerLayer: {mapServiceLoc}; {mapServiceName}; {mapServer?.Name}; {mapServer?.Type}; ; {mapServer?.URL}; \n" +
+                        alert.ShowDialog(new WindowWrapper(new IntPtr(ArcMap.Application.hWnd)));
+                    }
+                    // Other web services
+                    //if (layer is IImageServerLayer, 2, 3) .ServiceURL (readonly)
+                    //if (layer is IIMSMapLayer) .Connection (IIMSServiceDescription, readonly).URL (read/write)
+                    //if (layer is IMapServerRESTLayer)  has Connect(URL) method, not sure how URL is persisted in the layer
+                    //if (layer is IWCSLayer).ServiceURL (readonly)
+                    //if (layer is IWMSMapLayer, 2, 3) .WMSServiceDescription (IWMSServiceDescription, write only).BaseURL (readonly)
+
+                    //IDataLayer has Connect(IName) to reconnect broken layers and DataSourceName -> IName to get the datasource Name
+                    // The following CoClasses support IName
+                    // AGSServerConnectionName, ImageServerName, IMSServiceName, WCSConnectionName, WMSConnectionName, WMTSConnectionName
+
+                    else if (layer is IMosaicLayer)
+                    {
+                        var cl = layer as ICompositeLayer;
+                        var c = cl?.Count ?? 0;
+                        var notBroken = true;
+                        for (int j = 0; j < c; j++)
+                        {
+                            var layer2 = cl?.Layer[j] as ILayer2;
+                            if (layer2 != null)  // The Image sub-layer is not an ILayer2; it will crash when valid is called
+                            {
+                                //Calling Valid on a Mosaic sublayer as ILayer will crash;  ILayer2 is ok.  Why????
+                                notBroken = notBroken && layer2.Valid;
+                            }
+                        }
+                        alert.Text = "Found IMosaicLayer";
+                        alert.msgBox.Text =
+                            $"Mosaic Layer {layer.Name} has {c} children; is fully not_broken: {notBroken}\n";// +
+                                            //$"Layer is valid: {layer.Valid}" +
+                        alert.ShowDialog(new WindowWrapper(new IntPtr(ArcMap.Application.hWnd)));
+                    }
+                    else if (layer is IDataLayer2 && layer is IRasterLayer)
+                    {
+                        if (((IDataLayer2) layer).DataSourceName is IFunctionRasterDatasetName)
+                        {
+                            var frdn = (IFunctionRasterDatasetName) ((IDataLayer2) layer).DataSourceName;
+                            alert.Text = "Found IFunctionRasterDatasetName";
+                            alert.msgBox.Text = $"Dataset name: {frdn.FullName}" +
+                                                $"IDataSet.Name: {((IDataset)layer).Name}" +  //RasterLayer implements IDataSet (not helpful name is name of layer)
+                                                $"";
+                            alert.ShowDialog(new WindowWrapper(new IntPtr(ArcMap.Application.hWnd)));
+                        }
+                    }
+                    else if (layer is IDataLayer2)
+                    {
+                        var l = layer as IDataLayer2;
+                        alert.Text = "Found IDataLayer2";
+                        alert.msgBox.Text = $"Layer name: {layer.Name}\n" +
+                                            //$"Layer is valid: {layer.Valid}\n" +
+                                            $"Dataset name: {((IDatasetName) l.DataSourceName).Name}";
+                        alert.ShowDialog(new WindowWrapper(new IntPtr(ArcMap.Application.hWnd)));
+                    }
+                    else
+                    {
+                        alert.Text = "Unknown Layer Type";
+                        alert.msgBox.Text = $"Layer name: {layer.Name}" +
+                                            $"Layer is valid: {layer.Valid}\n" +
+                        alert.ShowDialog(new WindowWrapper(new IntPtr(ArcMap.Application.hWnd)));
+                    }
+                }
+            }
         }
 
         private Moves.GisDataset GetDataset(IDataLayer2 dataLayer)
