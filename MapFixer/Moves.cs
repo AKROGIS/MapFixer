@@ -1,4 +1,4 @@
-﻿using ESRI.ArcGIS.Geodatabase;
+﻿using ESRI.ArcGIS.Geodatabase;  // for esriDatasetType in GISDataset
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -101,8 +101,16 @@ namespace MapFixer
 
         public struct GisDataset: IEquatable<GisDataset>
         {
-            // esriDatasetType: https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriDatasetType.htm
-            // esriWorkspaceProgID: https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#IWorkspaceName_WorkspaceFactoryProgID.htm
+            // esriDatasetType (enumeration)
+            // arcObject (in ESRI.ArcGIS.Geodatabase): https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriDatasetType.htm
+            // Pro (in ArcGIS.Core.CIM): https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/#topic95.html
+
+            // esriWorkspaceProgID (string)
+            // ArcObjects: https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#IWorkspaceName_WorkspaceFactoryProgID.htm
+            // Pro: not exposed
+            // Python Pro: https://pro.arcgis.com/en/pro-app/latest/arcpy/functions/workspace-properties.htm
+            // Python 10.x: https://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/workspace-properties.htm
+
 
             public GisDataset(string workspacePath, string workspaceProgId, string datasourceName, esriDatasetType datasourceType)
             {
@@ -125,7 +133,8 @@ namespace MapFixer
 
             public bool Equals(GisDataset other)
             {
-                // TODO: The WorkspaceProgId from map data may have a ".1" (or other number?) suffix  (everything in Theme Manager ends in '.1')
+                // TODO: The WorkspaceProgId may have a ".1" suffix for 64bit products (omitted for 32bit products).
+                // Compare without the suffix. 
                 return Workspace == other.Workspace && WorkspaceProgId == other.WorkspaceProgId &&
                     DatasourceName == other.DatasourceName && DatasourceType == other.DatasourceType;
             }
@@ -290,14 +299,18 @@ namespace MapFixer
             //It may contain an empty list of moves, which will is dealt with appropriately
             //The csv file used for input should be validated whenever it is edited.
             //Validation rules:
-            //   Each row requires a timestamp, and the timestamp must be ordered from oldest to newest
+            //   Each row must have 15 fields; row is split on delimiter ('|') which must not appear in a field.
+            //   Each row requires a "timestamp" in the first field, and the timestamp must be ordered from oldest to newest
+            //   There must be an old workspace path in the 2nd column.
             //   Workspace paths must not have volume information
+            //   Column 3 if provided must be a valid esri WorkspaceFactoryProgId
+            //   Column 5 if provided must be a valid esriDatasetType
             //   Replacement datasets are not supported - use replacement layer file
             //   New and old datasets must not differ in workspace type or dataset type - use replacement layer file
             //   If newDataset is null (i.e old is deleted), trash or archive, then a replacement layer file should be provided.
             //      A remark is all that is mandatory when newDataset is null.
-            //   Column 2 and 6 must be progID strings
-            //   Columns 4 and 8 must be datasetTypes
+            //   Column 2 and 6 must be empty or a valid esri WorkspaceFactoryProgId string.
+            //   Columns 4 and 8 must be empty or a valid esriDatasetType string.
             //   workspace changes (i.e. dataSourceName is null) should be exclusive.
             //      i.e. if there is a move /a/b => /x/y, we should not have /a/b/c => ...
 
