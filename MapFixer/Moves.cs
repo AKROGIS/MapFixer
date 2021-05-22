@@ -100,7 +100,7 @@ namespace MapFixer
             #endregion
         }
 
-        public struct GisDataset: IEquatable<GisDataset>
+        public struct GisDataset : IEquatable<GisDataset>
         {
             // esriDatasetType (enumeration)
             // arcObject (in ESRI.ArcGIS.Geodatabase): https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriDatasetType.htm
@@ -145,7 +145,7 @@ namespace MapFixer
 
         struct PartialGisDataset
         {
-            public PartialGisDataset(string workspacePath, string workspaceProgId=null, string datasourceName=null, esriDatasetType? datasourceType=null)
+            public PartialGisDataset(string workspacePath, string workspaceProgId = null, string datasourceName = null, esriDatasetType? datasourceType = null)
             {
                 if (string.IsNullOrWhiteSpace(workspacePath))
                     throw new ArgumentException("Initial value must not be null, empty or whitespace", nameof(workspacePath));
@@ -290,9 +290,9 @@ namespace MapFixer
             }
         }
 
-        private readonly List<Move>  _moves = new List<Move>();
+        private readonly List<Move> _moves = new List<Move>();
 
-        public Moves(string csvPath, char delimiter='|', bool check=false)
+        public Moves(string csvPath, char delimiter = '|', bool check = false)
         {
             const int fieldCount = 15;
             int lineNum = 0;
@@ -448,7 +448,7 @@ namespace MapFixer
                     // replacement data source is not supported, so we ignore row[9] to row[12]
                     if (check)
                     {
-                        if (!string.IsNullOrWhiteSpace(row[9]) || !string.IsNullOrWhiteSpace(row[10]) || 
+                        if (!string.IsNullOrWhiteSpace(row[9]) || !string.IsNullOrWhiteSpace(row[10]) ||
                             !string.IsNullOrWhiteSpace(row[11]) || !string.IsNullOrWhiteSpace(row[12]))
                         {
                             Console.WriteLine($"Warning: Values in columns 10 to 13 (Replacement datasets) at line {lineNum} are not supported; Using null for replacement dataset.");
