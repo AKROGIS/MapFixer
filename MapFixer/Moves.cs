@@ -133,9 +133,10 @@ namespace MapFixer
 
             public bool Equals(GisDataset other)
             {
-                // TODO: The WorkspaceProgId may have a ".1" suffix for 64bit products (omitted for 32bit products).
+                // The WorkspaceProgId may have a ".1" suffix for 64bit products (omitted for 32bit products).
                 // Compare without the suffix. 
-                return Workspace == other.Workspace && WorkspaceProgId == other.WorkspaceProgId &&
+                return Workspace == other.Workspace && 
+                    WorkspaceProgId.Replace(".1","") == other.WorkspaceProgId.Replace(".1", "") &&
                     DatasourceName == other.DatasourceName && DatasourceType == other.DatasourceType;
             }
 
