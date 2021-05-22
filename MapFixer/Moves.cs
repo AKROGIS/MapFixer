@@ -1,7 +1,5 @@
-﻿using ESRI.ArcGIS.Geodatabase;  // for esriDatasetType in GISDataset
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
@@ -113,7 +111,7 @@ namespace MapFixer
             // Python 10.x: https://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/workspace-properties.htm
 
 
-            public GisDataset(string workspacePath, string workspaceProgId, string datasourceName, esriDatasetType datasourceType)
+            public GisDataset(string workspacePath, string workspaceProgId, string datasourceName, string datasourceType)
             {
                 if (string.IsNullOrWhiteSpace(workspacePath))
                     throw new ArgumentException("Initial value must not be null, empty or whitespace", nameof(workspacePath));
@@ -130,7 +128,7 @@ namespace MapFixer
             public Workspace Workspace { get; }
             public string WorkspaceProgId { get; }
             public string DatasourceName { get; }
-            public esriDatasetType DatasourceType { get; }
+            public string DatasourceType { get; }
 
             public bool Equals(GisDataset other)
             {
@@ -145,7 +143,7 @@ namespace MapFixer
 
         struct PartialGisDataset
         {
-            public PartialGisDataset(string workspacePath, string workspaceProgId = null, string datasourceName = null, esriDatasetType? datasourceType = null)
+            public PartialGisDataset(string workspacePath, string workspaceProgId = null, string datasourceName = null, string datasourceType = null)
             {
                 if (string.IsNullOrWhiteSpace(workspacePath))
                     throw new ArgumentException("Initial value must not be null, empty or whitespace", nameof(workspacePath));
@@ -158,7 +156,7 @@ namespace MapFixer
             public Workspace Workspace { get; }
             public string WorkspaceProgId { get; }
             public string DatasourceName { get; }
-            public esriDatasetType? DatasourceType { get; }
+            public string DatasourceType { get; }
 
             public GisDataset ToGisDataset(GisDataset gisDataset)
             {
@@ -372,13 +370,7 @@ namespace MapFixer
                         }
                         continue;
                     }
-                    esriDatasetType? dataSourceType = null;
-                    esriDatasetType tempDataSourceType;
-                    if (Enum.TryParse(row[4], out tempDataSourceType))
-                    {
-                        dataSourceType = tempDataSourceType;
-                    }
-                    if (dataSourceType == null && !string.IsNullOrWhiteSpace(row[4]))
+                    if (!string.IsNullOrWhiteSpace(row[4]) && !IsEsriDatasetType(row[4]))
                     {
                         if (check)
                         {
@@ -396,7 +388,7 @@ namespace MapFixer
                         continue;
                     }
 
-                    var oldDataset = new PartialGisDataset(row[1], row[2], row[3], dataSourceType);
+                    var oldDataset = new PartialGisDataset(row[1], row[2], row[3], row[4]);
 
                     PartialGisDataset? newDataset = null;
                     if (!string.IsNullOrWhiteSpace(row[5]))
@@ -418,14 +410,9 @@ namespace MapFixer
                             continue;
                         }
                         // We do not need to check that row[6] is a progID, because it must be null or the same as row[2], which has already been checked.
-                        dataSourceType = null;
                         if (!string.IsNullOrWhiteSpace(row[8]))
                         {
-                            if (Enum.TryParse(row[8], out tempDataSourceType))
-                            {
-                                dataSourceType = tempDataSourceType;
-                            }
-                            if (dataSourceType == null)
+                            if (!IsEsriDatasetType(row[8]))
                             {
                                 if (check)
                                 {
@@ -442,7 +429,7 @@ namespace MapFixer
                                 continue;
                             }
                         }
-                        newDataset = new PartialGisDataset(row[5], row[6], row[7], dataSourceType);
+                        newDataset = new PartialGisDataset(row[5], row[6], row[7], row[8]);
                     }
 
                     // replacement data source is not supported, so we ignore row[9] to row[12]
@@ -529,7 +516,7 @@ namespace MapFixer
         // Map/ArcObject (in ESRI.ArcGIS.Geodatabase): https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriDatasetType.htm
         // Pro (in ArcGIS.Core.CIM): https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/#topic95.html
 
-        private readonly string[] wellKnownDataTypes = {
+        private readonly string[] wellKnownDatasetTypes = {
             // Map and Pro
             "esriDTAny",
             "esriDTCadastralFabric",
@@ -577,12 +564,12 @@ namespace MapFixer
             "esriDTUtilityNetwork"
         };
 
-        private bool IsEsriDataType(string dataType)
+        private bool IsEsriDatasetType(string datasetType)
         {
             // Verify that dataType is a valid text representation of an esriDataType enum
             // While not all will work with Map, I'm assuming you won't have an issue with a Pro data type
             // unless you are a Pro user.
-            return wellKnownDataTypes.Contains(dataType);
+            return wellKnownDatasetTypes.Contains(datasetType);
         }
 
         // esriWorkspaceProgID (string)
@@ -738,7 +725,7 @@ namespace MapFixer
                 return false;
             if (String.Compare(dataset.DatasourceName, moveFrom.DatasourceName, StringComparison.OrdinalIgnoreCase) != 0)
                 return false;
-            if (moveFrom.DatasourceType != null && moveFrom.DatasourceType.Value != dataset.DatasourceType)
+            if (moveFrom.DatasourceType != null && moveFrom.DatasourceType != dataset.DatasourceType)
                 return false;
             return IsWorkspaceMatch(dataset, moveFrom);
         }

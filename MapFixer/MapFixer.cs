@@ -244,7 +244,7 @@ namespace MapFixer
             // Maybe check IWorkspaceName.Type != esriWorkspaceType.esriRemoteDatabaseWorkspace (esriFileSystemWorkspace and esriLocalDatabaseWorkspace are ok)
             // Looking at ~6300 data sources in Theme Manager, all have a pathName, for SDE it is the connection file, for web services it is the URL
             return new Moves.GisDataset(workspaceName.PathName, workspaceName.WorkspaceFactoryProgID,
-                datasetName.Name, datasetName.Type);
+                datasetName.Name, datasetName.Type.ToString());
         }
 
         private IDataset TryOpenDataset(Moves.GisDataset dataset)
@@ -266,12 +266,13 @@ namespace MapFixer
             }
             if (workspace == null)
                 return null;
-
-            var datasetNames = workspace.DatasetNames[dataset.DatasourceType];
+            if (dataset.DatasourceType.AsDatasetType() == null)
+                return null;
+            var datasetNames = workspace.DatasetNames[dataset.DatasourceType.AsDatasetType().Value];
             IDatasetName datasetName;
             while ((datasetName = datasetNames.Next()) != null)
             {
-                if (datasetName.Type == dataset.DatasourceType && string.Compare(datasetName.Name, dataset.DatasourceName, StringComparison.OrdinalIgnoreCase) == 0)
+                if (datasetName.ToString() == dataset.DatasourceType && string.Compare(datasetName.Name, dataset.DatasourceName, StringComparison.OrdinalIgnoreCase) == 0)
                     return TryOpenDataset(dataset, workspace, datasetName);
             }
             return null;
@@ -279,7 +280,10 @@ namespace MapFixer
 
         private IDataset TryOpenDataset(Moves.GisDataset dataset, IWorkspace workspace, IDatasetName datasetName)
         {
-            if (dataset.DatasourceType == esriDatasetType.esriDTFeatureClass)
+            if (dataset.DatasourceType.AsDatasetType() == null)
+                return null;
+            var datasetType = dataset.DatasourceType.AsDatasetType().Value;
+            if (datasetType == esriDatasetType.esriDTFeatureClass)
             {
                 try
                 {
@@ -293,7 +297,7 @@ namespace MapFixer
                 }
             }
             // For opening raster data see https://desktop.arcgis.com/en/arcobjects/10.5/net/webframe.htm#62937a09-b1c5-47d7-a1ac-f7a5daab3c89.htm
-            if (dataset.DatasourceType == esriDatasetType.esriDTRasterDataset)
+            if (datasetType == esriDatasetType.esriDTRasterDataset)
             {
                 try
                 {
@@ -310,7 +314,7 @@ namespace MapFixer
                     return null;
                 }
             }
-            if (dataset.DatasourceType == esriDatasetType.esriDTRasterCatalog || dataset.DatasourceType == esriDatasetType.esriDTMosaicDataset)
+            if (datasetType == esriDatasetType.esriDTRasterCatalog || datasetType == esriDatasetType.esriDTMosaicDataset)
             {
                 try
                 {
@@ -330,4 +334,18 @@ namespace MapFixer
             return null;
         }
     }
+
+    public static class StringExtensions
+    {
+        public static esriDatasetType? AsDatasetType(this string source)
+        {
+            esriDatasetType tmp;
+            if (esriDatasetType.TryParse(source, out tmp))
+            {
+                return tmp;
+            }
+            return null;
+        }
+    }
+
 }
