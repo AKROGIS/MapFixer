@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 
 namespace MapFixer
 {
@@ -523,55 +524,143 @@ namespace MapFixer
             return true;
         }
 
-        [SuppressMessage("ReSharper", "InconsistentNaming")]
-        [SuppressMessage("ReSharper", "IdentifierTypo")]
-        [SuppressMessage("ReSharper", "UnusedMember.Global")]
-        [SuppressMessage("ReSharper", "UnusedMember.Local")]
+
+        // strings mapping to the esriDatasetType enum
+        // Map/ArcObject (in ESRI.ArcGIS.Geodatabase): https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriDatasetType.htm
+        // Pro (in ArcGIS.Core.CIM): https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/#topic95.html
+
+        private readonly string[] wellKnownDataTypes = {
+            // Map and Pro
+            "esriDTAny",
+            "esriDTCadastralFabric",
+            "esriDTCadDrawing",
+            "esriDTContainer",
+            "esriDTFeatureClass",
+            "esriDTFeatureDataset",
+            "esriDTGeo",
+            "esriDTGeometricNetwork",
+            "esriDTLasDataset",
+            "esriDTLayer",
+            "esriDTLocator",
+            "esriDTMap",
+            "esriDTMosaicDataset",
+            "esriDTNetworkDataset",
+            "esriDTPlanarGraph",
+            "esriDTRasterBand",
+            "esriDTRasterCatalog",
+            "esriDTRasterDataset",
+            "esriDTRelationshipClass",
+            "esriDTRepresentationClass",
+            "esriDTSchematicDataset",
+            "esriDTStyle",
+            "esriDTTable",
+            "esriDTTerrain",
+            "esriDTText",
+            "esriDTTin",
+            "esriDTTool",
+            "esriDTToolbox",
+            "esriDTTopology",
+
+            // Pro only
+            "esriDTBIMFile",
+            "esriDTDiagramDataset",
+            "esriDTDiagramFolder",
+            "esriDTInvestigation",
+            "esriDTKnowledgeGraph",
+            "esriDTLayout",
+            "esriDTNetworkDiagram",
+            "esriDTParcelDataset",
+            "esriDTReport",
+            "esriDTStandaloneTable",
+            "esriDTStandaloneVideo",
+            "esriDTTraceNetwork",
+            "esriDTUtilityNetwork"
+        };
+
+        private bool IsEsriDataType(string dataType)
+        {
+            // Verify that dataType is a valid text representation of an esriDataType enum
+            // While not all will work with Map, I'm assuming you won't have an issue with a Pro data type
+            // unless you are a Pro user.
+            return wellKnownDataTypes.Contains(dataType);
+        }
+
+        // esriWorkspaceProgID (string)
+        // I could not find a definitive and complete list of progIDs, but I have captured all of the ones in Theme Manager
+        // ArcObjects: https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#IWorkspaceName_WorkspaceFactoryProgID.htm
+        // Python 10.x: https://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/workspace-properties.htm
         // For examples, See https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#IWorkspaceName_WorkspaceFactoryProgID.htm)
         // To comply with C# enum member naming rules, the '.' in the progId has been replaced with a '_'
         // Derived from list of CoClasses at https://desktop.arcgis.com/en/arcobjects/10.5/net/webframe.htm#IWorkspaceFactory.htm
-        private enum WellKnownWorkspaceProgIds
-        {
-            esriDataSourcesFile_ArcInfoWorkspaceFactory,  // In Theme Manager
-            esriDataSourcesFile_CadWorkspaceFactory,  // In Theme Manager
-            esriDataSourcesFile_GeoRSSWorkspaceFactory,
-            esriDataSourcesFile_PCCoverageWorkspaceFactory,
-            esriDataSourcesFile_SDCWorkspaceFactory,     // In Theme Manager
-            esriDataSourcesFile_ShapefileWorkspaceFactory,     // In Theme Manager
-            esriDataSourcesFile_StreetMapWorkspaceFactory,
-            esriDataSourcesFile_TinWorkspaceFactory,     // In Theme Manager
-            esriDataSourcesFile_VpfWorkspaceFactory,
+        // Pro:
+        // See Workspace Factory Enum at https://github.com/Esri/cim-spec/blob/master/docs/v2/CIMVectorLayers.md#enumeration-workspacefactory
+        // Python Pro: https://pro.arcgis.com/en/pro-app/latest/arcpy/functions/workspace-properties.htm
 
-            esriDataSourcesGDB_AccessWorkspaceFactory,     // In Theme Manager
-            esriDataSourcesGDB_FileGDBScratchWorkspaceFactory,  //Not supported
-            esriDataSourcesGDB_FileGDBWorkspaceFactory,     // In Theme Manager
-            esriDataSourcesGDB_InMemoryWorkspaceFactory,   //Not supported
-            esriDataSourcesGDB_ScratchWorkspaceFactory,  //Not supported
-            esriDataSourcesGDB_SdeWorkspaceFactory,    // In Theme Manager   //Not supported
-            esriDataSourcesGDB_SqlWorkspaceFactory,  //Not supported
+        private readonly string[] wellKnownWorkspaceProgIds = {
+            // ArcMap Only  (Note: May have a ".1" suffix on 64 systems)
+            "esriDataSourcesFile.ArcInfoWorkspaceFactory",
+            "esriDataSourcesFile.CadWorkspaceFactory",
+            "esriDataSourcesFile.GeoRSSWorkspaceFactory",
+            "esriDataSourcesFile.PCCoverageWorkspaceFactory",
+            "esriDataSourcesFile.SDCWorkspaceFactory",
+            "esriDataSourcesFile.ShapefileWorkspaceFactory",
+            "esriDataSourcesFile.StreetMapWorkspaceFactory",
+            "esriDataSourcesFile.TinWorkspaceFactory",
+            "esriDataSourcesFile.VpfWorkspaceFactory",
+            "esriDataSourcesGDB.AccessWorkspaceFactory",
+            "esriDataSourcesGDB.FileGDBScratchWorkspaceFactory",
+            "esriDataSourcesGDB.FileGDBWorkspaceFactory",
+            "esriDataSourcesGDB.InMemoryWorkspaceFactory",
+            "esriDataSourcesGDB.ScratchWorkspaceFactory",
+            "esriDataSourcesGDB.SdeWorkspaceFactory",
+            "esriDataSourcesGDB.SqlWorkspaceFactory",
+            "esriDataSourcesNetCDF.NetCDFWorkspaceFactory",
+            "esriDataSourcesOleDB.ExcelWorkspaceFactory",
+            "esriDataSourcesOleDB.OLEDBWorkspaceFactory",
+            "esriDataSourcesOleDB.TextFileWorkspaceFactory",
+            "esriDataSourcesRaster.RasterWorkspaceFactory",
+            "esriTrackingAnalyst.AMSWorkspaceFactory",
+            "esriCarto.FeatureServiceWorkspaceFactory",
+            "esriGISClient.IMSWorkspaceFactory",
+            "esriGeoDatabase.PlugInWorkspaceFactory",
+            "esriGeoDatabaseExtensions.LasDatasetWorkspaceFactory",
+            "esriGeoprocessing.ToolboxWorkspaceFactory",
 
-            esriDataSourcesNetCDF_NetCDFWorkspaceFactory,  //Not supported
-
-            esriDataSourcesOleDB_ExcelWorkspaceFactory,
-            esriDataSourcesOleDB_OLEDBWorkspaceFactory,  //Not supported
-            esriDataSourcesOleDB_TextFileWorkspaceFactory,
-
-            esriDataSourcesRaster_RasterWorkspaceFactory,     // In Theme Manager
-
-            esriTrackingAnalyst_AMSWorkspaceFactory,
-            esriCarto_FeatureServiceWorkspaceFactory,    // In Theme Manager  //Not supported (weirdly, type = esriFileSystemWorkspace)
-            esriGISClient_IMSWorkspaceFactory,  //Not supported
-            esriGeoDatabase_PlugInWorkspaceFactory,  //Not supported
-            esriGeoDatabaseExtensions_LasDatasetWorkspaceFactory,    // In Theme Manager
-            esriGeoprocessing_ToolboxWorkspaceFactory
-        }
+            // Pro Only
+            "Access",
+            "ArcInfo",
+            "BigDataConnection",
+            "BIMFile",
+            "Cad",
+            "Custom",
+            "DelimitedTextFile",
+            "Excel",
+            "FeatureService",
+            "FileGDB",
+            "InMemoryDB",
+            "KnowledgeGraph",
+            "LASDataset",
+            "NetCDF",
+            "NoSQL",
+            "OLEDB",
+            "Raster",
+            "SDE",
+            "Shapefile",
+            "Sql",
+            "SqlLite",
+            "StreamService",
+            "Tin",
+            "TrackingServer",
+            "WFS",
+        };
 
         private bool IsWorkspaceFactoryProgId(string progId)
         {
             // Verify that progId is a valid WorkspaceFactoryProgID
+            // progID may have a ".1" suffix not found in wellKnownWorkspaceProgIds
+            
             // There may be other valid progId that I have not identified, so this may produce some false positives
-            WellKnownWorkspaceProgIds temp;
-            return Enum.TryParse(progId.Replace('.','_'), out temp);
+            return wellKnownWorkspaceProgIds.Any(elem => elem.StartsWith(progId));
         }
 
         private bool IsSimilarToLayerFile(string layerFile)
