@@ -73,7 +73,7 @@ namespace MovesDatabase
 
             public override bool Equals(object obj)
             {
-                return obj is Workspace && Equals((Workspace)obj);
+                return obj is Workspace workspace && Equals(workspace);
             }
 
             public bool Equals(Workspace other)
@@ -335,8 +335,7 @@ namespace MovesDatabase
                         continue;
                     }
 
-                    DateTime timestamp;
-                    if (!DateTime.TryParse(row[0], out timestamp))
+                    if (!DateTime.TryParse(row[0], out DateTime timestamp))
                     {
                         if (check)
                         {
@@ -772,7 +771,7 @@ namespace MovesDatabase
             return null;
         }
 
-        public Solution? GetSolution(GisDataset oldDataset, DateTime since = default(DateTime))
+        public Solution? GetSolution(GisDataset oldDataset, DateTime since = default)
         {
             // default for since is the earliest possible DateTime, which will consider all moves in the database
             // Returns the first move in the database since the date given.  The solution will have a timestamp when the move was made

@@ -37,8 +37,7 @@ namespace MapFixer
                 var mapIndex = item.Key;
                 foreach (IDataLayer2 dataLayer in item.Value)
                 {
-                    var dataset = dataLayer as IDataset;
-                    var layerName = dataset != null ? dataset.Name : ((ILayer2)dataLayer).Name;
+                    var layerName = dataLayer is IDataset dataset ? dataset.Name : ((ILayer2)dataLayer).Name;
                     Moves.GisDataset oldDataset = GetDataset(dataLayer);
                     Moves.Solution? maybeSolution = moves.GetSolution(oldDataset);
                     if (maybeSolution == null)
@@ -190,8 +189,7 @@ namespace MapFixer
                 ILayer layer;
                 while((layer = layerEnumerator.Next()) != null)
                 {
-                    var layer2 = layer as ILayer2;
-                    if (layer2 != null)
+                    if (layer is ILayer2 layer2)
                     {
                         IDataLayer2 dataLayer = null;
                         if (!layer2.Valid)
@@ -209,10 +207,9 @@ namespace MapFixer
                             var groupCount = groupLayer?.Count ?? 0;
                             for (int j = 0; j < groupCount; j++)
                             {
-                                var subLayer = groupLayer?.Layer[j] as ILayer2;
                                 // Checking the Valid property on a Mosaic sublayer as ILayer will crash; Casting to ILayer2 is works.  Why????
                                 // The raster sub layer does not implement ILayer2.  That is ok, since the boundary and footprint will indicate validity
-                                if (subLayer != null) 
+                                if (groupLayer?.Layer[j] is ILayer2 subLayer)
                                 {
                                     if (!subLayer.Valid)
                                     {
@@ -340,8 +337,7 @@ namespace MapFixer
     {
         public static esriDatasetType? AsDatasetType(this string source)
         {
-            esriDatasetType tmp;
-            if (esriDatasetType.TryParse(source, out tmp))
+            if (esriDatasetType.TryParse(source, out esriDatasetType tmp))
             {
                 return tmp;
             }
