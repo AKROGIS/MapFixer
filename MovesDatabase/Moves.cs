@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace MapFixer
+namespace MovesDatabase
 {
     /// <summary>The <c>Moves</c> constructor must be given a file path to a CSV like file with a very specific format.
     /// See the constructor for details on the format and conventions.  During initialization, it will
