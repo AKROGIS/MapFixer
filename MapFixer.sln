@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "verifier", "verifier\verifi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MovesDatabase", "MovesDatabase\MovesDatabase.csproj", "{DBBCB8BB-8185-4514-9737-93211FFD1E5F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pro_AddIn", "Pro_AddIn\Pro_AddIn.csproj", "{15054E7C-F3AA-4498-A8E4-7CA4A5724A21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{DBBCB8BB-8185-4514-9737-93211FFD1E5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DBBCB8BB-8185-4514-9737-93211FFD1E5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DBBCB8BB-8185-4514-9737-93211FFD1E5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15054E7C-F3AA-4498-A8E4-7CA4A5724A21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15054E7C-F3AA-4498-A8E4-7CA4A5724A21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15054E7C-F3AA-4498-A8E4-7CA4A5724A21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15054E7C-F3AA-4498-A8E4-7CA4A5724A21}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
