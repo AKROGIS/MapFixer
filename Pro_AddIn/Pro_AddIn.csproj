@@ -121,6 +121,7 @@
   <ItemGroup>
     <Compile Include="CheckMapButton.cs" />
     <Compile Include="CheckMapModule.cs" />
+    <Compile Include="MapFixer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +131,12 @@
   <ItemGroup>
     <AddInContent Include="DarkImages\CheckMap16.png" />
     <AddInContent Include="DarkImages\CheckMap32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MovesDatabase\MovesDatabase.csproj">
+      <Project>{dbbcb8bb-8185-4514-9737-93211ffd1e5f}</Project>
+      <Name>MovesDatabase</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--

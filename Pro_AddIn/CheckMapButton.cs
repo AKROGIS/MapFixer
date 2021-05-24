@@ -8,7 +8,7 @@ namespace MapFixer
         async protected override void OnClick()
         {
             // Button has a precondition that there is an Active MapView
-            await CheckMapModule.Current.CheckMap(MapView.Active.Map);
+            await CheckMapModule.Current.CheckMapAsync(MapView.Active.Map);
         }
     }
 }

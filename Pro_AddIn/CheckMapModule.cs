@@ -4,6 +4,8 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Mapping;
 using ArcGIS.Desktop.Mapping.Events;
+using MovesDatabase;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MapFixer
@@ -11,7 +13,8 @@ namespace MapFixer
     internal class CheckMapModule : Module
     {
         private static CheckMapModule _this = null;
-        private static string _moves = null; //TODO Implement
+        private static readonly string _movesPath = @"X:\GIS\ThemeMgr\DataMoves.csv";
+        private static Moves _moves = null;
 
         /// <summary>
         /// Retrieve the singleton instance to this module here
@@ -58,25 +61,27 @@ namespace MapFixer
 
         internal async void CheckMap(MapViewEventArgs eventArgs)
         {
-            await CheckMap(eventArgs.MapView.Map);
+            await CheckMapAsync(eventArgs.MapView.Map);
         }
 
-        internal async Task CheckMap(Map map)
+        internal async Task CheckMapAsync(Map map)
         {
-            await LoadMoves();
-            MessageBox.Show("Implement CheckMap", "MapFixer");
-        }
-
-        private async Task LoadMoves()
-        {
-            if (_moves == null)
-            {
-                await Task.Run(() =>
+            if (map.HasBrokenLayers()) {
+                if (_moves == null)
                 {
-                    _moves = "move"; //TODO Implement
-                    MessageBox.Show("Loaded Moves", "MapFixer");
-                });
+                    await LoadMovesAsync();
+                }
+                MapFixer.FixMap(map, _moves);
             }
+        }
+
+        private async Task LoadMovesAsync()
+        {
+            await Task.Run(() =>
+            {
+                _moves = new Moves(_movesPath);
+                MessageBox.Show("Loaded Moves", "MapFixer");
+            });
         }
 
         #region Overrides
@@ -94,4 +99,13 @@ namespace MapFixer
         #endregion Overrides
 
     }
+
+    public static class MapExtensions
+    {
+        public static bool HasBrokenLayers(this Map map)
+        {
+            return map.GetLayersAsFlattenedList().Any(l => l.ConnectionStatus == ConnectionStatus.Broken);
+        }
+    }
+
 }
