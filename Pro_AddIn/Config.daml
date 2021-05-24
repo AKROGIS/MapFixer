@@ -1,43 +1,36 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<ArcGIS defaultAssembly="MapFixer.dll"
-        defaultNamespace="MapFixer"
-        xmlns="http://schemas.esri.com/DADF/Registry"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+﻿<ArcGIS defaultAssembly="MapFixer.dll" defaultNamespace="MapFixer"
+        xmlns="http://schemas.esri.com/DADF/Registry" 
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
         xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-
-  <AddInInfo id="{15054e7c-f3aa-4498-a8e4-7ca4a5724a21}" version="1.0" desktopVersion="2.7.26828">
-    <Name>MapFixer</Name>   
-    <Description>MapFixer description</Description>
-    <Image>Images\AddinDesktop32.png</Image>
-    <Author>RESarwas</Author>
-    <Company>Acme</Company>
+  <AddInInfo id="{15054e7c-f3aa-4498-a8e4-7ca4a5724a21}" version="1.0" desktopVersion="2.5">
+    <Name>MapFixer</Name>
+    <Description>
+      Checks and fixes any broken datasource paths in the project maps if the breakage is due to a PDS reorganization.
+    </Description>
+    <Image>Images\CheckMap32.png</Image>
+    <Author>Alaska Region GIS Team</Author>
+    <Company>National Park Service</Company>
     <Date>5/24/2021 10:26:45 AM</Date>
     <Subject>Framework</Subject>
-    <!-- Note subject can be one or more of these topics:
-                    Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>
-
   <modules>
-    <insertModule id="MapFixer_Module" className="Module1" autoLoad="false" caption="Module1">
-      <!-- uncomment to have the control hosted on a separate tab-->
-      <tabs>
-        <!--<tab id="MapFixer_Tab1" caption="New Tab">
-          <group refID="MapFixer_Group1"/>
-        </tab>-->
-      </tabs>
-              
+    <insertModule id="MapFixer_CheckMapModule" className="CheckMapModule" autoLoad="true" caption="CheckMapModule">
       <groups>
-        <!-- comment this out if you have no controls on the Addin tab to avoid
-              an empty group-->
-        <group id="MapFixer_Group1" caption="Group 1" appearsOnAddInTab="true">
-          <!-- host controls within groups -->
+        <group id="MapFixer_Group1" caption="Map Fixer" appearsOnAddInTab="true" keytip="MF">
+          <button refID="MapFixer_CheckMapButton" size="large" />
         </group>
       </groups>
-      
       <controls>
-        <!-- add your controls here -->
-      </controls> 
-      
+        <button id="MapFixer_CheckMapButton" caption="Check Map" className="CheckMapButton"
+                loadOnClick="true" keytip="CM" condition="esri_mapping_mapPane"
+                smallImage="Images\CheckMap16.png" 
+                largeImage="Images\CheckMap32.png">
+          <tooltip heading="Check Map">
+            Checks and fixes any broken datasource paths in the active map if they are due to a PDS reorganization.
+            <disabledText>A map is required.</disabledText>
+        </tooltip>
+        </button>
+      </controls>
     </insertModule>
   </modules>
 </ArcGIS>

@@ -1,16 +1,15 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("MapFixer")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("ArcGIS Pro AddIn for fixing broken layers.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Acme")]
+[assembly: AssemblyCompany("Alaska Region GIS Team")]
 [assembly: AssemblyProduct("MapFixer")]
-[assembly: AssemblyCopyright("Copyright © Acme 2021")]
+[assembly: AssemblyCopyright("Copyright © National Park Service 2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

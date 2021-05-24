@@ -117,14 +117,19 @@
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="Config.daml" />
-    <AddInContent Include="Images\AddInDesktop16.png" />
-    <AddInContent Include="Images\AddInDesktop32.png" />
-    <AddInContent Include="DarkImages\AddInDesktop16.png" />
-    <AddInContent Include="DarkImages\AddInDesktop32.png" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Module1.cs" />
+    <Compile Include="CheckMapButton.cs" />
+    <Compile Include="CheckMapModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="Images\CheckMap16.png" />
+    <AddInContent Include="Images\CheckMap32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="DarkImages\CheckMap16.png" />
+    <AddInContent Include="DarkImages\CheckMap32.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--
