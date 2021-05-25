@@ -5,6 +5,7 @@ using ArcGIS.Desktop.Mapping;
 using MovesDatabase;
 using System.Linq;
 using ArcGIS.Core.CIM;
+using ArcGIS.Desktop.Framework;
 
 namespace MapFixer
 {
@@ -55,10 +56,14 @@ namespace MapFixer
                 }
                 else
                 {
-                    var selector = new SelectionForm(); 
-                    selector.LayerName = layer.Name;
-                    //selector.GisDataset = oldDataset;
-                    selector.Solution = solution;
+                    var selector = new SelectorWindow
+                    {
+                        Owner = FrameworkApplication.Current.MainWindow,
+                        LayerName = layer.Name,
+                        Solution = solution
+                        //GisDataset = oldDataset;
+                        //Closed += (o, e) => { selector = null; };
+                    };
                     selector.ShowDialog();
                     if (selector.UseLayerFile)
                     {
