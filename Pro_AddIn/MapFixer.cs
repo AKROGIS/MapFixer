@@ -4,6 +4,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Mapping;
 using MovesDatabase;
 using System.Linq;
+using ArcGIS.Core.CIM;
 
 namespace MapFixer
 {
@@ -30,8 +31,13 @@ namespace MapFixer
             var intentionallyBroken = 0;
             foreach (var layer in map.GetLayersAsFlattenedList().Where(l => l.ConnectionStatus == ConnectionStatus.Broken))
             {
-                Moves.GisDataset oldDataset = GetDataset(layer);
-                Moves.Solution? maybeSolution = moves.GetSolution(oldDataset);
+                Moves.GisDataset? oldDataset = GetDataset(layer);
+                if (oldDataset == null)
+                {
+                    unFixableLayers += 1;
+                    continue;
+                }
+                Moves.Solution? maybeSolution = moves.GetSolution(oldDataset.Value);
                 if (maybeSolution == null)
                 {
                     unFixableLayers += 1;
@@ -45,10 +51,11 @@ namespace MapFixer
                     // The user is not prompted, since there is no good reason for a user not to click OK.
                     // The user will be warned that layers have been fixed, and they can choose to not save the changes.
                     autoFixesApplied += 1;
-                    RepairWithDataset(layer, oldDataset, solution.NewDataset.Value);
+                    RepairWithDataset(map, layer, oldDataset.Value, solution.NewDataset.Value);
                 }
                 else
                 {
+                    var selector = new SelectionForm(); 
                     selector.LayerName = layer.Name;
                     //selector.GisDataset = oldDataset;
                     selector.Solution = solution;
@@ -74,8 +81,7 @@ namespace MapFixer
             }
 
             // Refresh TOC
-            ArcMap.Document.UpdateContents(); //update the TOC
-            ArcMap.Document.ActivatedView.Refresh(); // refresh the view
+            //TODO - if needed.
 
             // Print a Summary
             var brokenDataSourcesCount = map.GetLayersAsFlattenedList().Count(l => l.ConnectionStatus == ConnectionStatus.Broken);
@@ -116,19 +122,28 @@ namespace MapFixer
 
         private static void RepairWithLayerFile(Map map, Layer layer, string newLayerFile, bool keepBrokenLayer)
         {
-            // Add Layer File to ActiveView Snippet: (http://help.arcgis.com/en/sdk/10.0/arcobjects_net/componenthelp/index.html#//004900000050000000)
-            IGxLayer gxLayer = new GxLayer();
-            IGxFile gxFile = (IGxFile)gxLayer;
-            gxFile.Path = newLayerFile;
-            int mapIndex = 0; //TODO:  need layer.Index
-            if (gxLayer.Layer != null)
+            // Create Layer form *.lyrx file:  https://github.com/esri/arcgis-pro-sdk/wiki/ProSnippets-MapAuthoring#create-layer-from-a-lyrx-file
+
+            // Pro can only use *.lyrx, not *.lyr:
+            // Assume Data Manager created a shadow *.lyrx file for the *.lyr file in the moves database
+            if (newLayerFile.EndsWith(".lyr", StringComparison.OrdinalIgnoreCase))
             {
-                // AddLayer will add the new layer at the most appropriate point in the TOC.
-                //   This is much easier and potentially less confusing than adding at the old data location. 
-                ArcMap.Document.Maps.Item[mapIndex].AddLayer(gxLayer.Layer);
+                newLayerFile += "x";
+            }
+            // TODO: If *.lyrx file does not exist, create *.lyrx from *.lyr file
+            Layer newLayer = null;
+            try
+            {
+                var layerDocument = new LayerDocument(newLayerFile);
+                var layerParameters = new LayerCreationParams(layerDocument.GetCIMLayerDocument());
+                newLayer = LayerFactory.Instance.CreateLayer<Layer>(layerParameters, map, LayerPosition.AutoArrange);
+            }
+            catch (Exception) {}
+            if (newLayer != null)
+            {
                 if (!keepBrokenLayer)
                 {
-                    ArcMap.Document.Maps.Item[mapIndex].DeleteLayer((ILayer)dataLayer);
+                    map.RemoveLayer(layer);
                 }
             }
             else
@@ -145,7 +160,9 @@ namespace MapFixer
         {
             // This routine, can only repair workspace path, and dataset name.
             // The workspace type and data type must be the same.
-            // This can be checked with the CSV verifier. Violations will be ignored in the CSV loader
+            // This is checked with a warning in the CSV verifier.
+            // Violations are silently ignored in the CSV loader so this code should never see it
+            // however if it escapes, it will also be ignored here as well.
             if (oldDataset.DatasourceType != newDataset.DatasourceType ||
                 oldDataset.WorkspaceProgId != newDataset.WorkspaceProgId)
             {
@@ -157,9 +174,21 @@ namespace MapFixer
             }
             else
             {
-                DataSource dataset = null; //  new <Type>DataSource(connector)
-                //OpenDataset<Type>(uri)
-                if (dataset == null || !Layer.CanReplaceDataSource(dataset))
+                if (Enum.TryParse(newDataset.DatasourceType, out esriDatasetType dataType) &&
+                    Enum.TryParse(newDataset.WorkspaceProgId, out WorkspaceFactory workspaceFactory))
+                {
+                    //TODO Connections may start with "DATABASE='X:\\...."
+                    string workspaceConnection = newDataset.Workspace.Folder;
+                    CIMStandardDataConnection updatedDataConnection = new CIMStandardDataConnection()
+                    {
+                        WorkspaceConnectionString = workspaceConnection,
+                        WorkspaceFactory = workspaceFactory,
+                        Dataset = newDataset.DatasourceName,
+                        DatasetType = dataType
+                    };
+                    layer.SetDataConnection(updatedDataConnection);
+                }
+                else
                 {
                     var title = @"Map Fixer Error";
                     var msg = $"Map Fixer is unable to repair the layer {layer.Name}. " +
@@ -167,25 +196,35 @@ namespace MapFixer
                               $"set the data source to {newDataset.Workspace.Folder}\\{newDataset.DatasourceName}";
                     MessageBox.Show(msg, title, System.Windows.MessageBoxButton.OK,
                         System.Windows.MessageBoxImage.Error);
-                    return;
                 }
-                layer.ReplaceDataSource(dataset);
             }
+
+            // Alternative implementation
+            // switch on newDataset.WorkspaceProgId, newDataset.DatasourceType
+            // uri = Uri(Path.Join(newDataset.Workspace.Folder, newDataset.DatasourceName)
+            // connection = <Type>ConnectionPath(uri, newDataset.DatasourceType)
+            // var dataset = OpenDataset<Type>(new <Type>DataSource(connection))
+            // i.e. file geodatabase DatasourceType = .fgdb //ArcGIS.Core.CIM.esriDatasetType, ArcGIS.Core.CIM.WorkspaceFactory
+            // var connection = new Geodatabase(new FileGeodatabaseConnectionPath(new Uri(@"newDataset.Workspace.Folder")))
+            // var dataset = connection.OpenDataset<FeatureDataset>(newDataset.DatasourceName)
+            // for .raster and .shape
+            // var connection = new FileSystemDataStore(new FileSystemConnectionPath(new Uri(@"newDataset.Workspace.Folder")))
+            // var dataset = connection.OpenDataset<BasicRasterDataset>(newDataset.DatasourceName)
         }
 
-        private static Moves.GisDataset GetDataset(Layer dataLayer)
+        private static Moves.GisDataset? GetDataset(Layer layer)
         {
-            
-            //TODO: dataLayer.DataSourceName is an IName.  Are we guaranteed this cast will not throw an exception?
-            var datasetName = (IDatasetName)dataLayer.DataSourceName;
-            IWorkspaceName workspaceName = datasetName.WorkspaceName;
-            //TODO: If the workspace.PathName is null (probably true for SDE or OleDB) then the GisDataset ctor will throw an exception.
-            // Maybe check IWorkspaceName.Type != esriWorkspaceType.esriRemoteDatabaseWorkspace (esriFileSystemWorkspace and esriLocalDatabaseWorkspace are ok)
-            // Looking at ~6300 data sources in Theme Manager, all have a pathName, for SDE it is the connection file, for web services it is the URL
-            return new Moves.GisDataset(workspaceName.PathName, workspaceName.WorkspaceFactoryProgID,
-                datasetName.Name, datasetName.Type.ToString());
+            var dataConnection = layer.GetDataConnection() as CIMStandardDataConnection;
+            if (dataConnection == null) { return null; }
+            // TODO: Consider CIMWorkspaceConnection, CIMFeatureDatasetDataConnection, and other subclasses of CIMDataConnection
+            // see https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/#topic943.html
+            var datasetName = dataConnection.Dataset;
+            var datasetType = dataConnection.DatasetType.ToString();
+            var workspaceName = dataConnection.WorkspaceConnectionString;
+            // TODO: Do we need to sanitize the connection string?  Moves expects just a file system path.
+            var workspaceFactory = dataConnection.WorkspaceFactory.ToString();
+            return new Moves.GisDataset(workspaceName, workspaceFactory, datasetName, datasetType);
         }
 
     }
-}
 }
