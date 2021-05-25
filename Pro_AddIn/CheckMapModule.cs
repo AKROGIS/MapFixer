@@ -84,7 +84,7 @@ namespace MapFixer
             await Task.Run(() =>
             {
                 _moves = new Moves(_movesPath);
-                MessageBox.Show("Loaded Moves", "MapFixer");
+                // MessageBox.Show("Loaded Moves", "MapFixer");
             });
         }
 
