@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Mapping;
 using MovesDatabase;
@@ -52,7 +51,7 @@ namespace MapFixer
                     // The user is not prompted, since there is no good reason for a user not to click OK.
                     // The user will be warned that layers have been fixed, and they can choose to not save the changes.
                     autoFixesApplied += 1;
-                    RepairWithDataset(map, layer, oldDataset.Value, solution.NewDataset.Value);
+                    RepairWithDataset(layer, oldDataset.Value, solution.NewDataset.Value);
                 }
                 else
                 {
@@ -75,7 +74,7 @@ namespace MapFixer
                     }
                     else if (selector.UseDataset && selector.Dataset.HasValue)
                     {
-                        RepairWithDataset(map, layer, oldDataset, selector.Dataset.Value);
+                        RepairWithDataset(layer, oldDataset.Value, selector.Dataset.Value);
                     }
                     else
                     {
@@ -161,7 +160,7 @@ namespace MapFixer
             }
         }
 
-        private static void RepairWithDataset(Map map, Layer layer, Moves.GisDataset oldDataset, Moves.GisDataset newDataset)
+        private static void RepairWithDataset(Layer layer, Moves.GisDataset oldDataset, Moves.GisDataset newDataset)
         {
             // This routine, can only repair workspace path, and dataset name.
             // The workspace type and data type must be the same.
@@ -182,7 +181,7 @@ namespace MapFixer
                 if (Enum.TryParse(newDataset.DatasourceType, out esriDatasetType dataType) &&
                     Enum.TryParse(newDataset.WorkspaceProgId, out WorkspaceFactory workspaceFactory))
                 {
-                    //TODO Connections may start with "DATABASE='X:\\...."
+                    //FIXME I think connections may start with "DATABASE='X:\\...."
                     string workspaceConnection = newDataset.Workspace.Folder;
                     CIMStandardDataConnection updatedDataConnection = new CIMStandardDataConnection()
                     {
@@ -219,8 +218,7 @@ namespace MapFixer
 
         private static Moves.GisDataset? GetDataset(Layer layer)
         {
-            var dataConnection = layer.GetDataConnection() as CIMStandardDataConnection;
-            if (dataConnection == null) { return null; }
+            if (!(layer.GetDataConnection() is CIMStandardDataConnection dataConnection)) { return null; }
             // TODO: Consider CIMWorkspaceConnection, CIMFeatureDatasetDataConnection, and other subclasses of CIMDataConnection
             // see https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/#topic943.html
             var datasetName = dataConnection.Dataset;
