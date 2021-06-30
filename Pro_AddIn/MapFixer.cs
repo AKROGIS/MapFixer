@@ -182,7 +182,7 @@ namespace MapFixer
                     Enum.TryParse(newDataset.WorkspaceProgId, out WorkspaceFactory workspaceFactory))
                 {
                     //FIXME I think connections may start with "DATABASE='X:\\...."
-                    string workspaceConnection = newDataset.Workspace.Folder;
+                    string workspaceConnection = "DATABASE=" + newDataset.Workspace.Folder;
                     CIMStandardDataConnection updatedDataConnection = new CIMStandardDataConnection()
                     {
                         WorkspaceConnectionString = workspaceConnection,
@@ -225,6 +225,8 @@ namespace MapFixer
             var datasetType = dataConnection.DatasetType.ToString();
             var workspaceName = dataConnection.WorkspaceConnectionString;
             // TODO: Do we need to sanitize the connection string?  Moves expects just a file system path.
+            workspaceName = workspaceName.Replace("DATABASE=", "");
+            if (!workspaceName.StartsWith("X:\\",StringComparison.OrdinalIgnoreCase)) { return null; }
             var workspaceFactory = dataConnection.WorkspaceFactory.ToString();
             return new Moves.GisDataset(workspaceName, workspaceFactory, datasetName, datasetType);
         }
