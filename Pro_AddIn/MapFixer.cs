@@ -91,9 +91,6 @@ namespace MapFixer
 
             }
 
-            // Refresh TOC
-            //TODO - if needed.
-
             // Print a Summary
             var brokenDataSourcesCount = map.GetLayersAsFlattenedList().Count(l => l.ConnectionStatus == ConnectionStatus.Broken);
             // Some unfixable layers may actually have been corrected by fixing the Mosaic Dataset Layer
