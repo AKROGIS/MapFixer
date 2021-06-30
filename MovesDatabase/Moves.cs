@@ -119,6 +119,8 @@ namespace MovesDatabase
                     throw new ArgumentException("Initial value must not be null, empty or whitespace", nameof(workspaceProgId));
                 if (string.IsNullOrWhiteSpace(datasourceName))
                     throw new ArgumentException("Initial value must not be null, empty or whitespace", nameof(datasourceName));
+                if (string.IsNullOrWhiteSpace(datasourceType))
+                    throw new ArgumentException("Initial value must not be null, empty or whitespace", nameof(datasourceType));
                 Workspace = new Workspace(workspacePath);
                 WorkspaceProgId = workspaceProgId;
                 DatasourceName = datasourceName;
@@ -150,7 +152,7 @@ namespace MovesDatabase
                 Workspace = new Workspace(workspacePath);
                 WorkspaceProgId = string.IsNullOrWhiteSpace(workspaceProgId) ? null : workspaceProgId;
                 DatasourceName = string.IsNullOrWhiteSpace(datasourceName) ? null : datasourceName;
-                DatasourceType = datasourceType;
+                DatasourceType = string.IsNullOrWhiteSpace(datasourceType) ? null : datasourceType;
             }
 
             public Workspace Workspace { get; }
