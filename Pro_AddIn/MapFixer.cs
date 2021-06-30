@@ -21,7 +21,12 @@ namespace MapFixer
 
     public class MapFixer
     {
-        // Must be called on the MCT (inside QueuedTask.Run)
+        /// <summary>
+        /// Fix the broken links in map that have solutions in moves.
+        /// Must be called on the MCT (inside QueuedTask.Run)
+        /// </summary>
+        /// <param name="map">The map to check</param>
+        /// <param name="moves">A database of known solutions to broken links</param>
         public static void FixMap(Map map, Moves moves)
         {
             if (map == null) { return; }
@@ -47,7 +52,7 @@ namespace MapFixer
                 if (solution.NewDataset != null && solution.ReplacementDataset == null &&
                     solution.ReplacementLayerFilePath == null && solution.Remarks == null)
                 {
-                    // This is the optimal action.
+                    // This is the typical solution (only choice is to update the dataset path).
                     // The user is not prompted, since there is no good reason for a user not to click OK.
                     // The user will be warned that layers have been fixed, and they can choose to not save the changes.
                     autoFixesApplied += 1;
@@ -60,8 +65,6 @@ namespace MapFixer
                         Owner = FrameworkApplication.Current.MainWindow,
                         LayerName = layer.Name,
                         Solution = solution
-                        //GisDataset = oldDataset;
-                        //Closed += (o, e) => { selector = null; };
                     };
                     selector.ShowDialog();
                     if (selector.UseLayerFile)
@@ -126,15 +129,15 @@ namespace MapFixer
 
         private static void RepairWithLayerFile(Map map, Layer layer, string newLayerFile, bool keepBrokenLayer)
         {
-            // Create Layer form *.lyrx file:  https://github.com/esri/arcgis-pro-sdk/wiki/ProSnippets-MapAuthoring#create-layer-from-a-lyrx-file
+            // Create Layer from *.lyrx file:  https://github.com/esri/arcgis-pro-sdk/wiki/ProSnippets-MapAuthoring#create-layer-from-a-lyrx-file
 
-            // Pro can only use *.lyrx, not *.lyr:
-            // Assume Data Manager created a shadow *.lyrx file for the *.lyr file in the moves database
+            // Pro Addin SDK can only open *.lyrx, not *.lyr:
+            // Assume Data Manager manually created a shadow *.lyrx file for the *.lyr file in the moves database
+            // TODO: If *.lyrx file does not exist, create *.lyrx from *.lyr file; must be done with an external python process
             if (newLayerFile.EndsWith(".lyr", StringComparison.OrdinalIgnoreCase))
             {
                 newLayerFile += "x";
             }
-            // TODO: If *.lyrx file does not exist, create *.lyrx from *.lyr file
             Layer newLayer = null;
             try
             {
@@ -181,7 +184,10 @@ namespace MapFixer
                 if (Enum.TryParse(newDataset.DatasourceType, out esriDatasetType dataType) &&
                     Enum.TryParse(newDataset.WorkspaceProgId, out WorkspaceFactory workspaceFactory))
                 {
-                    //FIXME I think connections may start with "DATABASE='X:\\...."
+                    //TODO: Replace the existing data connection with the same sub class of CIMDataConnection,
+                    //      Need support from the moves database and GetDataset() below to support this.
+                    //      Currently GetDataset() will ignore all but CIMStandardDataConnection, so we can
+                    //      safely assume that is what we need to create
                     string workspaceConnection = "DATABASE=" + newDataset.Workspace.Folder;
                     CIMStandardDataConnection updatedDataConnection = new CIMStandardDataConnection()
                     {
@@ -219,12 +225,16 @@ namespace MapFixer
         private static Moves.GisDataset? GetDataset(Layer layer)
         {
             if (!(layer.GetDataConnection() is CIMStandardDataConnection dataConnection)) { return null; }
-            // TODO: Consider CIMWorkspaceConnection, CIMFeatureDatasetDataConnection, and other subclasses of CIMDataConnection
-            // see https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/#topic943.html
+            // TODO: consider other subclasses of CIMDataConnection; needs to be coordinated with RepairWithDataset() above.
+            //       For data connection types, see https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/#topic943.html and
+            //       https://github.com/AKROGIS/ThemeManager/blob/f8f6d7ba7b8aa62f577a4c8fde067cbc019eeb2e/ArcGisPro/ProLayer.cs#L381
+            // TODO: CIMFeatureDatasetDataConnection is the second most common we might see (although there is currently nothing
+            //       in the moves database that would require it).  For this subclass, append "/"+ dataConnnection.FeatureDataset
+            //       to the workspace path.  In RepairWithDataset(), look for '/" and remove the feature dataset and create the a
+            //       CIMFeatureDatasetDataConnection
             var datasetName = dataConnection.Dataset;
             var datasetType = dataConnection.DatasetType.ToString();
             var workspaceName = dataConnection.WorkspaceConnectionString;
-            // TODO: Do we need to sanitize the connection string?  Moves expects just a file system path.
             workspaceName = workspaceName.Replace("DATABASE=", "");
             if (!workspaceName.StartsWith("X:\\",StringComparison.OrdinalIgnoreCase)) { return null; }
             var workspaceFactory = dataConnection.WorkspaceFactory.ToString();
