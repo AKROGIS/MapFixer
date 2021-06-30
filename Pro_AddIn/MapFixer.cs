@@ -62,7 +62,11 @@ namespace MapFixer
                 {
                     var selector = new SelectorWindow
                     {
-                        Owner = FrameworkApplication.Current.MainWindow,
+                        // TODO: fix this -
+                        // Setting the owner to the MainWindow will keep the dialog tied to the MainWindow, but it causes the following exception
+                        // System.InvalidOperationException: 'The calling thread cannot access this object because a different thread owns it.'
+                        // neither Dispatch.invoke(() => { ... }) on selector or the MainWindow worked.
+                        //Owner = FrameworkApplication.Current.MainWindow,
                         LayerName = layer.Name,
                         Solution = solution
                     };
