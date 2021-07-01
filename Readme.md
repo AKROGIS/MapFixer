@@ -24,12 +24,18 @@ if building the ArcGIS Pro version.
 Open the solution in the version Visual Studio supported by
 your version of ArcGIS. Select Build Solution from the VS menu.
 
+## Testing
+
 Extra caution should be made to thoroughly test any changes
 before deploying to ensure that the changes are stable. MapFixer
 runs whenever ArcMap is started for almost all Alaska GIS users.
 It would be very frustrating if it crashes ArcMap.
 
-A sample moves database is in `verifier/TestMoves.csv`
+A sample moves database is in `verifier/TestMoves.csv`.  For NPS
+users, there are test ArcMap documents and Pro layer files at
+`T:\Users\Regan\Other Stuff\Testing Data\MapFixer`. These files
+are broken in ways that should be fixed with the moves database
+deployed to the PDS.
 
 ## Deploy
 
@@ -53,7 +59,7 @@ install tool.
 After building a release version, provide the files
 `verifier/bin/release/MovesDatabase.dll` and
 `verifier/bin/release/verifier.exe` to the PDS data manager
-and ask her to install it in `\GIS\Tools\MovesDbVerifier`.
+and ask her to install them in `\GIS\Tools\MovesDbVerifier`.
 The verifier does not require any version of ArcGIS to
 verify the moves database.
 
