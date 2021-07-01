@@ -26,7 +26,7 @@
                 <RadioButton x:Name="radioButton3" Content="Add new layer file (and keep broken layer)" />
                 <RadioButton x:Name="radioButton4" Content="Use the data set in the trash (not recommended)"/>
             </StackPanel>
-            <Button x:Name="okButton" Content="OK" HorizontalAlignment="Right" Width="74" VerticalAlignment="Bottom"/>
+            <Button x:Name="okButton" Content="OK" HorizontalAlignment="Right" Width="74" VerticalAlignment="Bottom" Click="okButton_Clicked"/>
         </StackPanel>
     </StackPanel>
 </controls:ProWindow>

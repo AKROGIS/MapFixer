@@ -119,6 +119,11 @@ namespace MapFixer
             msgBox.Text += "\n\nHow would you like to fix this layer?";
         }
 
+        private void okButton_Clicked(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
         //TODO: Add help to assist the user in making the choice.
     }
 }
