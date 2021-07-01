@@ -101,8 +101,9 @@ namespace MapFixer
                 string msg = "";
                 if (autoFixesApplied > 0)
                 {
+                    var plural = autoFixesApplied == 1 ? " was" : "s were";
                     msg +=
-                        $"{autoFixesApplied} broken layers were automatically fixed based on the new locations of known data sources. " +
+                        $"{autoFixesApplied} broken layer{plural} automatically fixed based on the new locations of known data sources. " +
                         "Close the document without saving if this is not what you want.";
                 }
                 if (autoFixesApplied > 0 && (unFixableLayers > 0 || brokenDataSourcesCount > 0))
