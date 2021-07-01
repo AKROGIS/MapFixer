@@ -29,10 +29,10 @@ your version of ArcGIS. Select Build Solution from the VS menu.
 Extra caution should be made to thoroughly test any changes
 before deploying to ensure that the changes are stable. MapFixer
 runs whenever ArcMap is started for almost all Alaska GIS users.
-It would be very frustrating if it crashes ArcMap.
+It would be very frustrating if it crashes ArcGIS.
 
 A sample moves database is in `verifier/TestMoves.csv`.  For NPS
-users, there are test ArcMap documents and Pro layer files at
+developers, there are test ArcMap documents and Pro layer files at
 `T:\Users\Regan\Other Stuff\Testing Data\MapFixer`. These files
 are broken in ways that should be fixed with the moves database
 deployed to the PDS.
@@ -45,8 +45,8 @@ After building a release version, provide the files
 `MapFixer/Map_Addin/bin/release/MapFixer.esriAddin` and/or
 `MapFixer/Pro_Addin/bin/release/MapFixer.esriAddinx`
 to the PDS data manager
-and ask her to install it in `X:\GIS\Addins\10.X` and/or
-`X:\GIS\Addins\Pro` respectively. where it will
+and ask her to install them in `X:\GIS\Addins\10.X` and/or
+`X:\GIS\Addins\Pro` respectively.  Addins in these locations will
 automatically be loaded by most Alaska GIS users. (replace `10.x` by
 all versions of ArcGIS greater than or equal to the version set in
 [`MapFixer/Map_Addin/config.esriaddinx`](https://github.com/AKROGIS/MapFixer/blob/4803e5ab7e99645623d0fb5e37c85add3f0785bb/Map_AddIn/Config.esriaddinx#L11).)
