@@ -178,7 +178,20 @@ namespace MapFixer
             }
             if (oldDataset.DatasourceName == newDataset.DatasourceName)
             {
-                layer.FindAndReplaceWorkspacePath(oldDataset.Workspace.Folder, newDataset.Workspace.Folder, false);
+                try
+                {
+                    // This threw an underlying COM exception with a test case with valid input, so wrap in the try for safely
+                    layer.FindAndReplaceWorkspacePath(oldDataset.Workspace.Folder, newDataset.Workspace.Folder, false);
+                }
+                catch
+                {
+                    var title = @"Map Fixer Error";
+                    var msg = $"Map Fixer failed to repair the layer {layer.Name}. " +
+                              "Use the 'Set Data Source button' on the Source tab of the layer properties dialog to " +
+                              $"set the data source to {newDataset.Workspace.Folder}\\{newDataset.DatasourceName}";
+                    MessageBox.Show(msg, title, System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Error);
+                }
             }
             else
             {
